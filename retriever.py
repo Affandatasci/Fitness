@@ -11,7 +11,7 @@ Run ingest.py before using this — it queries a Qdrant collection that
 must already have vectors in it.
 """
 
-import torch
+import math
 import requests
 from qdrant_client import QdrantClient
 from sentence_transformers import SentenceTransformer, CrossEncoder
@@ -22,12 +22,31 @@ import config
 
 class HybridRetriever:
     def __init__(self):
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        # Streamlit Community Cloud has no GPU, so this will land on
-        # "cpu" automatically at deploy time — no code change needed
-        # between local testing and deployment.
-        self.embedding_model = SentenceTransformer(config.EMBEDDING_MODEL, device=device)
+        # Forced to "cpu", not auto-detected via torch.cuda.is_available().
+        #
+        # This class is instantiated once at app.py module load time —
+        # BEFORE any @spaces.GPU-decorated function has run. On HF
+        # ZeroGPU, torch.cuda.is_available() reports True even there
+        # (ZeroGPU patches it so model-loading code doesn't need special
+        # casing), so this used to load onto a CUDA device that hadn't
+        # actually been granted yet. Running inference through that path
+        # produced NaN in the output embeddings (confirmed: encode()'s
+        # output was failing Python's own json.dumps with "Out of range
+        # float values are not JSON compliant", i.e. NaN/Inf in the
+        # vector, not a downstream API issue).
+        #
+        # A single query embedding (this is per-request, not batched
+        # ingestion) is well under a second on CPU for this ~335M-param
+        # model, so there's no throughput reason to fight ZeroGPU's
+        # virtual-CUDA behaviour for this path.
+        self.embedding_model = SentenceTransformer(config.EMBEDDING_MODEL, device="cpu")
 
+        # Same reasoning applies to the reranker: same process, same
+        # instantiation point, same risk of NaN scores if left on an
+        # auto-detected CUDA device. NaN reranker scores wouldn't even
+        # crash — sorted() just silently mis-ranks, which is worse than
+        # a crash. Forced to CPU for the same reason.
+        #
         # max_length is set explicitly rather than left at the model's
         # default. Our chunks are already ~512 tokens on their own —
         # pairing a full chunk with even a short 20-30 token query
@@ -36,7 +55,7 @@ class HybridRetriever:
         # the CHUNK side ourselves (see _truncate_for_reranker) so the
         # truncation is visible and intentional, and leaves headroom
         # for the query within the 512-token budget.
-        self.reranker = CrossEncoder(config.RERANKER_MODEL, max_length=512)
+        self.reranker = CrossEncoder(config.RERANKER_MODEL, max_length=512, device="cpu")
 
         self.qdrant_client = QdrantClient(url=config.QDRANT_URL, api_key=config.QDRANT_API_KEY)
 
@@ -106,6 +125,17 @@ class HybridRetriever:
         cluster — proof QDRANT_URL/QDRANT_API_KEY are valid.
         """
         query_vector = self.embedding_model.encode(query, normalize_embeddings=True).tolist()
+
+        # Safety net: fail loudly and immediately if the embedding model
+        # ever produces NaN/Inf again (e.g. a future device regression),
+        # instead of letting it surface three frames deep as a generic
+        # requests.exceptions.InvalidJSONError with no mention of where
+        # the bad value came from.
+        if not all(math.isfinite(v) for v in query_vector):
+            raise RuntimeError(
+                f"Embedding model produced non-finite values (NaN/Inf) for "
+                f"query {query!r}. embedding_model.device={self.embedding_model.device}"
+            )
 
         url = f"{config.QDRANT_URL.rstrip('/')}/collections/{config.QDRANT_COLLECTION_NAME}/points/search"
         headers = {"api-key": config.QDRANT_API_KEY, "Content-Type": "application/json"}

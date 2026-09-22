@@ -17,9 +17,14 @@ from sentence_transformers import SentenceTransformer, CrossEncoder
 from rank_bm25 import BM25Okapi
 
 import config
-
+import qdrant_client as _qc
 
 class HybridRetriever:
+    def __init__(self):
+    
+        print(f"DEBUG qdrant-client=={_qc.__version__}, search={hasattr(_qc.QdrantClient, 'search')}, query_points={hasattr(_qc.QdrantClient, 'query_points')}")
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+    ...
     def __init__(self):
         device = "cuda" if torch.cuda.is_available() else "cpu"
         # Streamlit Community Cloud has no GPU, so this will land on

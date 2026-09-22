@@ -12,6 +12,7 @@ must already have vectors in it.
 """
 
 import torch
+import requests
 from qdrant_client import QdrantClient
 from sentence_transformers import SentenceTransformer, CrossEncoder
 from rank_bm25 import BM25Okapi
@@ -81,18 +82,50 @@ class HybridRetriever:
     def _dense_search(self, query: str, top_k: int) -> list:
         """Returns a ranked list of point IDs from vector similarity search.
 
-        Uses query_points() — the only search method in qdrant-client >=1.16.
-        (search() was removed in 1.16.0; the 400 error seen with older 1.14-1.15
-        builds was a client-side serialisation bug that is fixed in 1.19.1.)
+        Calls Qdrant's /points/search REST endpoint directly with `requests`,
+        instead of qdrant-client's search()/query_points() wrapper methods.
+
+        Why: search() was removed from qdrant-client in v1.16.0. Its
+        replacement, query_points(), sends the query as a nested
+        {"query": {"nearest": [...]}} payload — confirmed from the
+        qdrant-client 1.19.1 source — and that nested shape is what this
+        Qdrant Cloud cluster's 400 "Expected some form of vector, id, or a
+        type of query" error was rejecting (the error column lands inside
+        the vector array, i.e. mid-parse of that nested structure).
+
+        /points/search is the older, stable endpoint: a flat
+        {"vector": [...]} body with no enum-variant ambiguity for the
+        server to reject. It's still live on Qdrant Cloud for backward
+        compatibility — only the Python *wrapper* method was removed from
+        qdrant-client, not the server-side REST route. This also sidesteps
+        needing to match qdrant-client's Python API to whatever version HF
+        Spaces installs going forward.
+
+        self.qdrant_client (the SDK) is left in place for .scroll() in
+        _load_corpus_for_bm25, which already works correctly against this
+        cluster — proof QDRANT_URL/QDRANT_API_KEY are valid.
         """
         query_vector = self.embedding_model.encode(query, normalize_embeddings=True).tolist()
-        results = self.qdrant_client.query_points(
-            collection_name=config.QDRANT_COLLECTION_NAME,
-            query=query_vector,          # plain list[float] for unnamed default vector
-            limit=top_k,
-            with_payload=False,
-        )
-        return [point.id for point in results.points]
+
+        url = f"{config.QDRANT_URL.rstrip('/')}/collections/{config.QDRANT_COLLECTION_NAME}/points/search"
+        headers = {"api-key": config.QDRANT_API_KEY, "Content-Type": "application/json"}
+        body = {
+            "vector": query_vector,
+            "limit": top_k,
+            "with_payload": False,
+            "with_vectors": False,
+        }
+
+        response = requests.post(url, json=body, headers=headers, timeout=30)
+        if response.status_code != 200:
+            # Surface Qdrant's actual error text instead of a bare stack
+            # trace, so any further issue is diagnosable from the log
+            # in one look rather than another guess-and-redeploy round.
+            raise RuntimeError(
+                f"Qdrant /points/search failed ({response.status_code}): {response.text[:500]}"
+            )
+
+        return [point["id"] for point in response.json()["result"]]
 
     def _sparse_search(self, query: str, top_k: int) -> list:
         """Returns a ranked list of point IDs from BM25 keyword search."""

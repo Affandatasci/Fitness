@@ -12,6 +12,7 @@
 # silently replacing your CUDA build with a CPU-only one.
 
 groq
+requests
 qdrant-client==1.19.1
 sentence-transformers
 langgraph

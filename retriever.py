@@ -17,14 +17,9 @@ from sentence_transformers import SentenceTransformer, CrossEncoder
 from rank_bm25 import BM25Okapi
 
 import config
-import qdrant_client as _qc
+
 
 class HybridRetriever:
-    def __init__(self):
-    
-        print(f"DEBUG qdrant-client=={_qc.__version__}, search={hasattr(_qc.QdrantClient, 'search')}, query_points={hasattr(_qc.QdrantClient, 'query_points')}")
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-    ...
     def __init__(self):
         device = "cuda" if torch.cuda.is_available() else "cpu"
         # Streamlit Community Cloud has no GPU, so this will land on
@@ -84,14 +79,20 @@ class HybridRetriever:
         self.bm25 = BM25Okapi(tokenized_corpus)
 
     def _dense_search(self, query: str, top_k: int) -> list:
+        """Returns a ranked list of point IDs from vector similarity search.
+
+        Uses query_points() — the only search method in qdrant-client >=1.16.
+        (search() was removed in 1.16.0; the 400 error seen with older 1.14-1.15
+        builds was a client-side serialisation bug that is fixed in 1.19.1.)
+        """
         query_vector = self.embedding_model.encode(query, normalize_embeddings=True).tolist()
-        results = self.qdrant_client.search(
+        results = self.qdrant_client.query_points(
             collection_name=config.QDRANT_COLLECTION_NAME,
-            query_vector=query_vector,
+            query=query_vector,          # plain list[float] for unnamed default vector
             limit=top_k,
             with_payload=False,
         )
-        return [point.id for point in results]
+        return [point.id for point in results.points]
 
     def _sparse_search(self, query: str, top_k: int) -> list:
         """Returns a ranked list of point IDs from BM25 keyword search."""

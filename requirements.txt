@@ -1,8 +1,20 @@
+# Forge Physique RAG demo — core dependencies
+# Install with: pip install -r requirements.txt
+#
+# NOTE: Do NOT add "gradio" here.
+# HF Spaces (Gradio SDK) manages Gradio itself. Adding it causes a version
+# conflict with the pre-installed huggingface_hub and is what caused the
+# "cannot import HfFolder" crash.
+#
+# On Colab: torch is already installed with GPU/CUDA support.
+# Do NOT separately "pip install torch" there — sentence-transformers
+# below will pull in whatever torch build already exists rather than
+# silently replacing your CUDA build with a CPU-only one.
+
 groq
-qdrant-client
+qdrant-client==1.19.1
 sentence-transformers
 langgraph
 python-dotenv
 rank-bm25
 numpy
-qdrant-client<2.0.0

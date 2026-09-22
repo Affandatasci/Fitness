@@ -13,7 +13,7 @@ Deploy steps:
   3. Add secrets in Space settings:
        GROQ_API_KEY, QDRANT_URL, QDRANT_API_KEY
 """
-
+import spaces
 import gradio as gr
 from groq import Groq
 
@@ -23,7 +23,7 @@ from agent import build_graph, answer_question
 from cache import SemanticCache
 import spaces   # add at top with other imports
 
-@spaces.GPU     # add this decorator
+@spaces.GPU
 def respond(message: str, history: list, deep_reasoning: bool):
     if not message.strip():
         return history, ""

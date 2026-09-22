@@ -5,3 +5,4 @@ langgraph
 python-dotenv
 rank-bm25
 numpy
+qdrant-client<2.0.0

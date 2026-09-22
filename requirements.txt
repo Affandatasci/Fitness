@@ -1,24 +1,7 @@
-# Forge Physique RAG demo — core dependencies
-# Install with: pip install -r requirements.txt
-#
-# On Colab: torch is already installed with GPU/CUDA support.
-# Do NOT separately "pip install torch" there — sentence-transformers
-# below will pull in whatever torch build already exists rather than
-# silently replacing your CUDA build with a CPU-only one.
-
 groq
 qdrant-client
 sentence-transformers
 langgraph
-streamlit
 python-dotenv
 rank-bm25
 numpy
-gradio
-# After this installs successfully once on your machine, run:
-#   pip freeze > requirements-lock.txt
-# and reuse that locked file for the actual Streamlit Community Cloud
-# deploy instead of re-resolving versions fresh each time. Guessing or
-# hand-pinning version numbers here (instead of checking real installed
-# values first) is what caused the 5-round dependency conflict during
-# the Email Agent deployment — don't repeat that here.

@@ -21,7 +21,16 @@ import config
 from retriever import HybridRetriever
 from agent import build_graph, answer_question
 from cache import SemanticCache
+import spaces   # add at top with other imports
 
+@spaces.GPU     # add this decorator
+def respond(message: str, history: list, deep_reasoning: bool):
+    if not message.strip():
+        return history, ""
+    result = answer_question(
+        ...
+    )
+    ...
 
 # ---------------------------------------------------------------------------
 # Load heavy resources ONCE at startup — shared across ALL visitors.

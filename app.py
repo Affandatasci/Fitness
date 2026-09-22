@@ -95,7 +95,6 @@ def _cache_count_label() -> str:
 
 with gr.Blocks(
     title="Forge Physique Coaching Assistant",
-    theme=gr.themes.Soft(),
 ) as demo:
 
     gr.Markdown(
@@ -111,9 +110,8 @@ with gr.Blocks(
         # ── Left column: chat ──────────────────────────────────────────────
         with gr.Column(scale=4):
             chatbot = gr.Chatbot(
-                height=480,
-                bubble_full_width=False,
-                show_label=False,
+            height=480,
+            show_label=False,
             )
             with gr.Row():
                 msg_box = gr.Textbox(
@@ -169,4 +167,4 @@ with gr.Blocks(
     )
 
 
-demo.launch()
+demo.launch(theme=gr.themes.Soft())

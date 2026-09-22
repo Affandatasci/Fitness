@@ -79,15 +79,14 @@ class HybridRetriever:
         self.bm25 = BM25Okapi(tokenized_corpus)
 
     def _dense_search(self, query: str, top_k: int) -> list:
-        """Returns a ranked list of point IDs from vector similarity search."""
         query_vector = self.embedding_model.encode(query, normalize_embeddings=True).tolist()
-        results = self.qdrant_client.query_points(
+        results = self.qdrant_client.search(
             collection_name=config.QDRANT_COLLECTION_NAME,
-            query=query_vector,
+            query_vector=query_vector,
             limit=top_k,
             with_payload=False,
         )
-        return [point.id for point in results.points]
+        return [point.id for point in results]
 
     def _sparse_search(self, query: str, top_k: int) -> list:
         """Returns a ranked list of point IDs from BM25 keyword search."""

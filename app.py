@@ -121,10 +121,14 @@ with gr.Blocks(
 
         # ── Left column: chat ──────────────────────────────────────────────
         with gr.Column(scale=4):
+            # No type= kwarg: this Gradio version doesn't accept it at all
+            # (TypeError: unexpected keyword argument 'type') — the old
+            # tuples/messages selector was removed along with tuples
+            # support itself. Messages format ({"role","content"} dicts,
+            # which respond() below already builds) is the only mode now.
             chatbot = gr.Chatbot(
                 height=480,
                 show_label=False,
-                type="messages",  # explicit: don't rely on the version default again
             )
             with gr.Row():
                 msg_box = gr.Textbox(

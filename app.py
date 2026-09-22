@@ -13,24 +13,16 @@ Deploy steps:
   3. Add secrets in Space settings:
        GROQ_API_KEY, QDRANT_URL, QDRANT_API_KEY
 """
-import spaces
+
 import gradio as gr
+import spaces
 from groq import Groq
 
 import config
 from retriever import HybridRetriever
 from agent import build_graph, answer_question
 from cache import SemanticCache
-import spaces   # add at top with other imports
 
-@spaces.GPU
-def respond(message: str, history: list, deep_reasoning: bool):
-    if not message.strip():
-        return history, ""
-    result = answer_question(
-        ...
-    )
-    ...
 
 # ---------------------------------------------------------------------------
 # Load heavy resources ONCE at startup — shared across ALL visitors.
@@ -59,12 +51,15 @@ print("Ready.")
 # Chat function — called by Gradio on every user message
 # ---------------------------------------------------------------------------
 
+@spaces.GPU
 def respond(message: str, history: list, deep_reasoning: bool):
     """
     Parameters
     ----------
     message       : the new user message
-    history       : list of [user_msg, assistant_msg] pairs (Gradio format)
+    history       : list of {"role": "user"|"assistant", "content": str} dicts
+                    (Gradio 6.x "messages" format — see gr.Chatbot(type="messages")
+                    below; NOT the old [user_msg, assistant_msg] pair format)
     deep_reasoning: from the checkbox widget
 
     Returns
@@ -90,7 +85,15 @@ def respond(message: str, history: list, deep_reasoning: bool):
     elif result["from_cache"]:
         reply += "\n\n⚡ *Answered from semantic cache*"
 
-    history = history + [[message, reply]]
+    # Gradio 6.x's gr.Chatbot dropped the old [[user_msg, bot_msg], ...]
+    # tuple format entirely (confirmed by the ChatbotDataMessages
+    # validator in the traceback — there's no tuples fallback anymore).
+    # It now requires a flat list of {"role", "content"} dicts, so each
+    # turn appends TWO entries, not one pair.
+    history = history + [
+        {"role": "user", "content": message},
+        {"role": "assistant", "content": reply},
+    ]
     return history, ""
 
 
@@ -119,8 +122,9 @@ with gr.Blocks(
         # ── Left column: chat ──────────────────────────────────────────────
         with gr.Column(scale=4):
             chatbot = gr.Chatbot(
-            height=480,
-            show_label=False,
+                height=480,
+                show_label=False,
+                type="messages",  # explicit: don't rely on the version default again
             )
             with gr.Row():
                 msg_box = gr.Textbox(

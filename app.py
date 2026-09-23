@@ -195,5 +195,9 @@ demo.launch(
         body_background_fill="*neutral_950",
         body_text_color="*neutral_50",
         block_background_fill="*neutral_900",
+        background_fill_primary="*neutral_800",
+        background_fill_secondary="*neutral_800",
+        color_accent_soft="*neutral_800",
+        chatbot_text_size="19px",
     )
 )

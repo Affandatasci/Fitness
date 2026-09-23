@@ -189,6 +189,11 @@ demo.launch(
         primary_hue="orange",
         secondary_hue="amber",
         neutral_hue="slate",
+        text_size="lg",
         font=[gr.themes.GoogleFont("Montserrat"), "ui-sans-serif", "sans-serif"],
+    ).set(
+        body_background_fill="*neutral_950",
+        body_text_color="*neutral_50",
+        block_background_fill="*neutral_900",
     )
 )

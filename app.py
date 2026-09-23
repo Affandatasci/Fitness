@@ -199,5 +199,6 @@ demo.launch(
         background_fill_secondary="*neutral_800",
         color_accent_soft="*neutral_800",
         chatbot_text_size="19px",
+        input_background_fill="*neutral_800",
     )
 )

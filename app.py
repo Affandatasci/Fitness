@@ -184,4 +184,11 @@ with gr.Blocks(
     )
 
 
-demo.launch(theme=gr.themes.Soft())
+demo.launch(
+    theme=gr.themes.Citrus(
+        primary_hue="orange",
+        secondary_hue="amber",
+        neutral_hue="slate",
+        font=[gr.themes.GoogleFont("Montserrat"), "ui-sans-serif", "sans-serif"],
+    )
+)

@@ -10,7 +10,11 @@ before the top chunks are handed to the LLM.
 Run ingest.py before using this — it queries a Qdrant collection that
 must already have vectors in it.
 """
+# FIND:
+from sentence_transformers import SentenceTransformer, CrossEncoder
 
+# REPLACE WITH:
+from sentence_transformers import SentenceTransformer
 import math
 import requests
 from qdrant_client import QdrantClient
@@ -41,21 +45,7 @@ class HybridRetriever:
         # virtual-CUDA behaviour for this path.
         self.embedding_model = SentenceTransformer(config.EMBEDDING_MODEL, device="cpu")
 
-        # Same reasoning applies to the reranker: same process, same
-        # instantiation point, same risk of NaN scores if left on an
-        # auto-detected CUDA device. NaN reranker scores wouldn't even
-        # crash — sorted() just silently mis-ranks, which is worse than
-        # a crash. Forced to CPU for the same reason.
-        #
-        # max_length is set explicitly rather than left at the model's
-        # default. Our chunks are already ~512 tokens on their own —
-        # pairing a full chunk with even a short 20-30 token query
-        # silently pushes past a default 512-token reranker limit and
-        # truncates from the end with no warning. We instead truncate
-        # the CHUNK side ourselves (see _truncate_for_reranker) so the
-        # truncation is visible and intentional, and leaves headroom
-        # for the query within the 512-token budget.
-        self.reranker = CrossEncoder(config.RERANKER_MODEL, max_length=512, device="cpu")
+     
 
         self.qdrant_client = QdrantClient(url=config.QDRANT_URL, api_key=config.QDRANT_API_KEY)
 
@@ -196,15 +186,7 @@ class HybridRetriever:
         fused_ids = self._reciprocal_rank_fusion([dense_ids, sparse_ids])
         candidate_ids = fused_ids[: config.TOP_K_RETRIEVE]
 
-        pairs = [
-            (query, self._truncate_for_reranker(self.id_to_text[doc_id]))
-            for doc_id in candidate_ids
-        ]
-        rerank_scores = self.reranker.predict(pairs)
-
-        scored = list(zip(candidate_ids, rerank_scores))
-        scored.sort(key=lambda x: x[1], reverse=True)
-        top_ids = [doc_id for doc_id, _ in scored[: config.TOP_K_RERANK]]
+        top_ids = fused_ids[: config.TOP_K_RERANK]
 
         return [
             {"text": self.id_to_text[doc_id], "source": self.id_to_source[doc_id]}

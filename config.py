@@ -13,12 +13,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # --- Secrets (from .env — never hardcode real keys here) ---
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 QDRANT_URL = os.getenv("QDRANT_URL")
 QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
 
-if not GROQ_API_KEY:
-    raise ValueError("GROQ_API_KEY is missing. Copy .env.example to .env and fill it in.")
+if not GOOGLE_API_KEY:
+    raise ValueError("GOOGLE_API_KEY is missing. Add it to .env")
 if not QDRANT_URL or not QDRANT_API_KEY:
     raise ValueError("QDRANT_URL / QDRANT_API_KEY is missing. Copy .env.example to .env and fill it in.")
 
@@ -27,15 +27,15 @@ if not QDRANT_URL or not QDRANT_API_KEY:
 # llama-3.1-8b-instant and llama-3.3-70b-versatile on Aug 16, 2026).
 # If it's been more than a few weeks since you last checked, verify
 # these are still live at console.groq.com/docs/models before a demo.
-MAIN_MODEL = "openai/gpt-oss-120b"   # final answer generation — fast path
-LIGHT_MODEL = "openai/gpt-oss-20b"   # used only by the optional self-correction loop (grade/rewrite)
+MAIN_MODEL = "gemini-3.8-flash"
+LIGHT_MODEL = "gemini-3.8-flash"
 
 # --- Embedding model (local, free, no API cost) ---
 EMBEDDING_MODEL = "mixedbread-ai/mxbai-embed-large-v1"
 EMBEDDING_DIM = 1024  # must match the vector size the Qdrant collection is created with — don't change without full re-ingestion
 
 # --- Reranker (local, CPU-viable — roughly 20-40ms per pair) ---
-RERANKER_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+# RERANKER_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 
 # --- Qdrant collection ---
 # A NEW, dedicated collection name — this keeps the demo's vectors
@@ -51,7 +51,7 @@ CHUNK_OVERLAP_CHARS = 300     # ~75 tokens of overlap between consecutive chunks
 DOCUMENTS_FOLDER = "data"  # ingest.py reads every .md/.txt file from this folder
 
 # --- Retrieval ---
-TOP_K_RETRIEVE = 10   # chunks pulled by hybrid search before reranking
+TOP_K_RETRIEVE = 5   # chunks pulled by hybrid search before reranking
 TOP_K_RERANK = 4      # chunks that survive reranking and get sent to the LLM
 RRF_K = 60             # standard Reciprocal Rank Fusion constant
 

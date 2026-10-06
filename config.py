@@ -27,8 +27,8 @@ if not QDRANT_URL or not QDRANT_API_KEY:
 # llama-3.1-8b-instant and llama-3.3-70b-versatile on Aug 16, 2026).
 # If it's been more than a few weeks since you last checked, verify
 # these are still live at console.groq.com/docs/models before a demo.
-MAIN_MODEL = "gemini-3.8-flash"
-LIGHT_MODEL = "gemini-3.8-flash"
+MAIN_MODEL = "gemini-2.5-flash"
+LIGHT_MODEL = "gemini-2.5-flash"
 
 # --- Embedding model (local, free, no API cost) ---
 EMBEDDING_MODEL = "mixedbread-ai/mxbai-embed-large-v1"

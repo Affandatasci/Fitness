@@ -7,5 +7,5 @@ qdrant-client
 sentence-transformers
 python-dotenv
 pypdf
-openai
+anthropic
 rank_bm25

@@ -51,7 +51,7 @@ class GraphState(TypedDict):
     attempts: int
 
 
-def build_graph(retriever, groq_client):
+def build_graph(retriever, anthropic_client):
     """
     Wires the retriever and Groq client into the graph's node functions
     as closures, then compiles and returns the graph. Call this once
@@ -72,12 +72,13 @@ def build_graph(retriever, groq_client):
             f"Does the retrieved context contain enough information to fully "
             f"answer the question? Respond with exactly one word: YES or NO."
         )
-        response = groq_client.chat.completions.create(
+        response = anthropic_client.messages.create(
             model=config.LIGHT_MODEL,
+            max_tokens=10,
             messages=[{"role": "user", "content": prompt}],
-            temperature=0,
+            # temperature=0,
         )
-        verdict = response.choices[0].message.content.strip().upper()
+        verdict = response.content[0].text.strip().upper()
         return {
             "is_sufficient": verdict.startswith("YES"),
             "attempts": state["attempts"] + 1,
@@ -90,27 +91,31 @@ def build_graph(retriever, groq_client):
             f"Rewrite it to be more specific and more likely to match relevant "
             f"document content. Return ONLY the rewritten question, nothing else."
         )
-        response = groq_client.chat.completions.create(
+
+
+
+        
+        response = anthropic_client.messages.create(
             model=config.LIGHT_MODEL,
+            max_tokens=200,
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.3,
+            # temperature=0.3,
         )
-        rewritten = response.choices[0].message.content.strip()
+        rewritten = response.content[0].text.strip()
         return {"question": rewritten}
 
     def generate_node(state: GraphState) -> dict:
         context = "\n\n".join(f"[Source: {c['source']}]\n{c['text']}" for c in state["chunks"])
         system_prompt = SYSTEM_PROMPT_TEMPLATE.format(context=context)
 
-        response = groq_client.chat.completions.create(
+        response = anthropic_client.messages.create(
             model=config.MAIN_MODEL,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": state["original_question"]},
-            ],
-            temperature=0.3,
-        )
-        return {"answer": response.choices[0].message.content}
+            max_tokens=1024,
+            system=system_prompt,
+            messages=[{"role": "user", "content": state["original_question"]}],
+            # temperature=0.3,
+            )
+        return {"answer": response.content[0].text}
 
     def route_after_retrieve(state: GraphState) -> str:
         return "grade" if state["deep_reasoning"] else "generate"

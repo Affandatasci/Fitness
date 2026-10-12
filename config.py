@@ -13,12 +13,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # --- Secrets (from .env — never hardcode real keys here) ---
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 QDRANT_URL = os.getenv("QDRANT_URL")
 QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
 
-if not GOOGLE_API_KEY:
-    raise ValueError("GOOGLE_API_KEY is missing. Add it to .env")
+if not ANTHROPIC_API_KEY:
+    raise ValueError("ANTHROPIC_API_KEY is missing. Add it to .env")
 if not QDRANT_URL or not QDRANT_API_KEY:
     raise ValueError("QDRANT_URL / QDRANT_API_KEY is missing. Copy .env.example to .env and fill it in.")
 
@@ -27,8 +27,8 @@ if not QDRANT_URL or not QDRANT_API_KEY:
 # llama-3.1-8b-instant and llama-3.3-70b-versatile on Aug 16, 2026).
 # If it's been more than a few weeks since you last checked, verify
 # these are still live at console.groq.com/docs/models before a demo.
-MAIN_MODEL = "gemini-3.5-flash-lite"
-LIGHT_MODEL = "gemini-3.5-flash-lite"
+MAIN_MODEL = "claude-haiku-4-5"
+LIGHT_MODEL = "claude-haiku-4-5"
 # --- Embedding model (local, free, no API cost) ---
 EMBEDDING_MODEL = "mixedbread-ai/mxbai-embed-large-v1"
 EMBEDDING_DIM = 1024  # must match the vector size the Qdrant collection is created with — don't change without full re-ingestion

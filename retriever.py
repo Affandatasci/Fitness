@@ -10,11 +10,6 @@ before the top chunks are handed to the LLM.
 Run ingest.py before using this — it queries a Qdrant collection that
 must already have vectors in it.
 """
-# FIND:
-from sentence_transformers import SentenceTransformer, CrossEncoder
-
-# REPLACE WITH:
-from sentence_transformers import SentenceTransformer
 import math
 import requests
 from qdrant_client import QdrantClient

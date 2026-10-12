@@ -13,7 +13,13 @@ must already have vectors in it.
 import math
 import requests
 from qdrant_client import QdrantClient
+# from sentence_transformers import SentenceTransformer, CrossEncoder
+from sentence_transformers import SentenceTransformer
+import math
+import requests
+from qdrant_client import QdrantClient
 from sentence_transformers import SentenceTransformer, CrossEncoder
+from rank_bm25 import BM25Okapi
 from rank_bm25 import BM25Okapi
 
 import config

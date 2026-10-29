@@ -26,8 +26,20 @@ import config
 
 MAX_GRADE_ATTEMPTS = 2
 
-SYSTEM_PROMPT_TEMPLATE = """You are the AI assistant for Forge Physique Coaching, an online physique coaching business run by Marcus Cole.
 
+def _extract_text(response) -> str:
+    """
+    Returns the text from the first text block in the response.
+    Newer Claude models can return non-text blocks (e.g. a thinking
+    block) before the actual answer, so content[0] isn't always text.
+    """
+    for block in response.content:
+        if block.type == "text":
+            return block.text
+    raise ValueError("No text block found in Claude's response.")
+
+
+SYSTEM_PROMPT_TEMPLATE = """You are the AI assistant for Forge Physique Coaching, an online physique coaching business run by Marcus Cole.
 Answer the client's question using ONLY the information in the CONTEXT below. This is a strict rule:
 - If the answer is fully contained in the context, answer clearly and directly.
 - If the context only partially answers the question, answer what you can and say plainly what you don't have information on.
@@ -78,7 +90,7 @@ def build_graph(retriever, anthropic_client):
             messages=[{"role": "user", "content": prompt}],
             # temperature=0,
         )
-        verdict = response.content[0].text.strip().upper()
+        verdict = _extract_text(response).strip().upper()
         return {
             "is_sufficient": verdict.startswith("YES"),
             "attempts": state["attempts"] + 1,
@@ -101,7 +113,7 @@ def build_graph(retriever, anthropic_client):
             messages=[{"role": "user", "content": prompt}],
             # temperature=0.3,
         )
-        rewritten = response.content[0].text.strip()
+        rewritten = _extract_text(response).strip()
         return {"question": rewritten}
 
     def generate_node(state: GraphState) -> dict:
@@ -115,7 +127,7 @@ def build_graph(retriever, anthropic_client):
             messages=[{"role": "user", "content": state["original_question"]}],
             # temperature=0.3,
             )
-        return {"answer": response.content[0].text}
+        return {"answer": _extract_text(response)}
 
     def route_after_retrieve(state: GraphState) -> str:
         return "grade" if state["deep_reasoning"] else "generate"

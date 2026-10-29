@@ -27,12 +27,11 @@ if not QDRANT_URL or not QDRANT_API_KEY:
 # llama-3.1-8b-instant and llama-3.3-70b-versatile on Aug 16, 2026).
 # If it's been more than a few weeks since you last checked, verify
 # these are still live at console.groq.com/docs/models before a demo.
-MAIN_MODEL = "claude-haiku-4-5"
-LIGHT_MODEL = "claude-haiku-4-5"
+MAIN_MODEL = "claude-haiku-5-5"
+LIGHT_MODEL = "claude-haiku-5-5"
 # --- Embedding model (local, free, no API cost) ---
-EMBEDDING_MODEL = "mixedbread-ai/mxbai-embed-large-v1"
-EMBEDDING_DIM = 1024  # must match the vector size the Qdrant collection is created with — don't change without full re-ingestion
-
+EMBEDDING_MODEL = "BAAI/bge-small-en-v1.5"
+EMBEDDING_DIM = 384  # must match the vector size the Qdrant collection is created with — don't change without full re-ingestion
 # --- Reranker (local, CPU-viable — roughly 20-40ms per pair) ---
 # RERANKER_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 

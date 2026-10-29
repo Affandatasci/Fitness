@@ -44,7 +44,7 @@ class HybridRetriever:
         # ingestion) is well under a second on CPU for this ~335M-param
         # model, so there's no throughput reason to fight ZeroGPU's
         # virtual-CUDA behaviour for this path.
-        self.embedding_model = SentenceTransformer(config.EMBEDDING_MODEL, device="cpu")
+        self.embedding_model = SentenceTransformer(config.EMBEDDING_MODEL, device="cpu", model_kwargs={"torch_dtype": "float32"})
 
      
 
